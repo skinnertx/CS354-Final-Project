@@ -10,8 +10,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <learnopengl/mesh.h>
-#include <learnopengl/shader_s.h>
+#include "mesh.h"
+#include "shader.h"
 
 #include <string>
 #include <fstream>
@@ -62,7 +62,6 @@ private:
         directory = path.substr(0, path.find_last_of('/'));
 
         // process ASSIMP's root node recursively
-        cout << "got here"
         processNode(scene->mRootNode, scene);
     }
 
@@ -205,9 +204,11 @@ private:
 
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
-{
+{   
+    // TODO fix this, right now it has to be modified for every object
     string filename = string(path);
-    filename = directory + '/' + filename;
+    std::string dir = directory.substr(0, 69);
+    filename = dir + '/' + filename;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
