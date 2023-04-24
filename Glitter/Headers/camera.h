@@ -84,7 +84,14 @@ public:
             Position += Up * velocity;
         if (direction == DOWN)
             Position -= Up * velocity;
+    }
 
+    void sprint() {
+        MovementSpeed = SPEED * 2;
+    }
+
+    void slow() {
+        MovementSpeed = SPEED;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

@@ -59,7 +59,7 @@ private:
             return;
         }
         // retrieve the directory path of the filepath
-        directory = path.substr(0, path.find_last_of('/'));
+        directory = path.substr(0, path.find_last_of('\\'));
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
@@ -204,11 +204,9 @@ private:
 
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
-{   
-    // TODO fix this, right now it has to be modified for every object
+{
     string filename = string(path);
-    std::string dir = directory.substr(0, 69);
-    filename = dir + '/' + filename;
+    filename = directory + '/' + filename;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -231,6 +229,7 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
