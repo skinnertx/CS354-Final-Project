@@ -151,6 +151,7 @@ private:
         // specular: texture_specularN
         // normal: texture_normalN
 
+
         // 1. diffuse maps
         vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -165,7 +166,12 @@ private:
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        Mesh m = Mesh(vertices, indices, textures);
+        aiColor4D diffuse;
+        if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
+            m.diffuse = glm::vec3(diffuse.r, diffuse.g, diffuse.b);
+        }
+        return m;
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.

@@ -43,6 +43,7 @@ public:
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
     vector<Texture>      textures;
+    glm::vec3            diffuse = glm::vec3(0.0f, 0.0f, 0.0f);
     unsigned int VAO;
 
     // constructor
@@ -84,6 +85,9 @@ public:
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
+
+        // material diffuse
+        shader.setVec3("material.diffuse", diffuse);
 
         // draw mesh
         glBindVertexArray(VAO);
