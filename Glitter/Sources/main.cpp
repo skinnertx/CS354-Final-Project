@@ -30,6 +30,14 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+// set default hue colors and weights
+struct Hue hue = {
+    glm::vec3(0.0f, 0.0f, 0.4f), // cool
+    glm::vec3(0.4f, 0.4f, 0.0f), // warm
+    0.2f, // alpha
+    0.6f // beta
+};
+
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
@@ -82,15 +90,6 @@ int main(int argc, char * argv[]) {
     // TODO how do I get relative paths working?
     Shader ourShader("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.vs", 
                      "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.fs");
-
-    // set default Hue colors and weights
-    // ----------------------------------
-    struct Hue hue;
-    hue.cool = glm::vec3(0.0f, 0.0f, 0.4f);
-    hue.warm = glm::vec3(0.4f, 0.4f, 0.0f);
-    hue.alpha = 0.2f;
-    hue.beta = 0.6f;
-
 
     // load models
     // -----------
@@ -183,6 +182,18 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(UP, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
+
+    // control Hue alpha
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        hue.alpha = min(hue.alpha + 0.001f, 1.0f);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        hue.alpha = max(hue.alpha - 0.001f, 0.0f);
+
+    // control Hue beta
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        hue.beta = min(hue.beta + 0.001f, 1.0f);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        hue.beta = max(hue.beta - 0.001f, 0.0f);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
