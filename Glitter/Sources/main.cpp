@@ -39,7 +39,7 @@ struct Hue hue = {
 };
 
 // camera
-Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
+Camera camera(glm::vec3(-10.0f, 10.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -136,20 +136,25 @@ int main(int argc, char * argv[]) {
     string silhouetteVertexShader = glitterDir + "\\Shaders\\sil.vs";
     string silhouetteFragShader = glitterDir + "\\Shaders\\sil.fs";
 
-    string windowVS = glitterDir + "\\Shaders\\window.vs";
-    string windowFS = glitterDir + "\\Shaders\\window.fs";
+    string normalVS = glitterDir + "\\Shaders\\normal.vs";
+    string normalFS = glitterDir + "\\Shaders\\normal.fs";
+
+    string depthVS = glitterDir + "\\Shaders\\depth.vs";
+    string depthFS = glitterDir + "\\Shaders\\depth.fs";
 
 
     // build and compile our shader programs
     // ------------------------------------
     Shader ourShader(vertexShader.c_str(), fragShader.c_str());
     Shader silShader(silhouetteVertexShader.c_str(), silhouetteFragShader.c_str());
-    Shader winShader(windowVS.c_str(), windowFS.c_str());
+    Shader normalShader(normalVS.c_str(), normalFS.c_str());
+    Shader depthShader(depthVS.c_str(), depthFS.c_str());
 
 
     // load models
     // -----------
-    string modelObj = "\\resources\\teapot\\teapot_n_glass.obj";
+    string modelObj = "\\resources\\A-Wing Starfighter.obj";
+    //string modelObj = "\\resources\\teapot\\teapot_n_glass.obj";
     Model ourModel((glitterDir + modelObj).c_str());
 
     // Create Context and Load OpenGL Functions
@@ -251,12 +256,13 @@ int main(int argc, char * argv[]) {
         ourModel.Draw(ourShader);
 
         glDisable(GL_DEPTH_TEST);
-        winShader.use();
-        winShader.setBool("left", false);
+        normalShader.use();
+        normalShader.setBool("left", false);
         glBindVertexArray(quadVAO);
         glBindTexture(GL_TEXTURE_2D, normalTex);	// use the color attachment texture as the texture of the quad plane
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        winShader.setBool("left", true);
+        depthShader.use();
+        depthShader.setBool("left", true);
         glBindTexture(GL_TEXTURE_2D, depthTex);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
