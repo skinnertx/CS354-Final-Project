@@ -128,7 +128,7 @@ int main(int argc, char * argv[]) {
 
     // set glitter dir and shader locations
     // ------------------------------------
-    string glitterDir = "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter";
+    string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter";
 
     string vertexShader = glitterDir + "\\Shaders\\model.vs";
     string fragShader = glitterDir + "\\Shaders\\model.fs";
@@ -207,7 +207,7 @@ int main(int argc, char * argv[]) {
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        if (false) {
+        if (true) {
             // render depth and normal textures
             // -----
             glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);

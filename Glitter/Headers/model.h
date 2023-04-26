@@ -126,11 +126,11 @@ private:
                 vec.x = mesh->mTextureCoords[0][i].x;
                 vec.y = mesh->mTextureCoords[0][i].y;
                 vertex.TexCoords = vec;
-                // tangent
+                // tangent (will be overwritten later)
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
                 vector.z = mesh->mTangents[i].z;
-                vertex.Tangent = vector;
+                vertex.FaceNormal = vector;
                 // bitangent
                 vector.x = mesh->mBitangents[i].x;
                 vector.y = mesh->mBitangents[i].y;
@@ -147,8 +147,36 @@ private:
         {
             aiFace face = mesh->mFaces[i];
             // retrieve all indices of the face and store them in the indices vector
+
+            vector<unsigned int> faceIndices;
+            //std::cout << face.mNumIndices << "\n";
             for (unsigned int j = 0; j < face.mNumIndices; j++)
-                indices.push_back(face.mIndices[j]);
+            {
+                int index = face.mIndices[j];
+                //std::cout << "index " << j << ": " << index << " ";
+                indices.push_back(index);
+                faceIndices.push_back(index);
+            }
+            //std::cout << "\n";
+
+            // assuming all faces are tri's
+            // get the surface normal of the tri and store in each vertex
+            glm::vec3 Apos = vertices[faceIndices[0]].Position;
+            glm::vec3 Bpos = vertices[faceIndices[1]].Position;
+            glm::vec3 Cpos = vertices[faceIndices[2]].Position;
+
+            //std::cout << "x: " << Apos.x << " " << "y: " << Apos.y << " " << "z: " << Apos.z << "\n";
+
+            glm::vec3 BA = Bpos - Apos;
+            glm::vec3 CA = Cpos - Apos;
+
+            glm::vec3 faceNormal = glm::normalize(glm::cross(BA, CA));
+
+            //std::cout << "x: " << faceNormal.x << " " << "y: " << faceNormal.y << " " << "z: " << faceNormal.z << "\n";
+
+            vertices[faceIndices[0]].FaceNormal = faceNormal;
+            vertices[faceIndices[1]].FaceNormal = faceNormal;
+            vertices[faceIndices[2]].FaceNormal = faceNormal;
         }
         // process materials
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
