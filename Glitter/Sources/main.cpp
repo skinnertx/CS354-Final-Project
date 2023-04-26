@@ -14,6 +14,12 @@
 #include <cstdio>
 #include <cstdlib>
 
+struct Hue {
+    glm::vec3 cool;
+    glm::vec3 warm;
+    float alpha;
+    float beta;
+};
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -78,10 +84,12 @@ int main(int argc, char * argv[]) {
                      "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.fs");
 
     // set default Hue colors and weights
-    glm::vec3 coolColor = glm::vec3(0.0f, 0.0f, 0.4f);
-    glm::vec3 warmColor = glm::vec3(0.4f, 0.4f, 0.0f);
-    float alpha = 0.2f;
-    float beta = 0.6f;
+    // ----------------------------------
+    struct Hue hue;
+    hue.cool = glm::vec3(0.0f, 0.0f, 0.4f);
+    hue.warm = glm::vec3(0.4f, 0.4f, 0.0f);
+    hue.alpha = 0.2f;
+    hue.beta = 0.6f;
 
 
     // load models
@@ -116,14 +124,14 @@ int main(int argc, char * argv[]) {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        // update light direction for hue shading
+        // update light direction for hue
         ourShader.setVec3("aLightDir", glm::normalize(glm::cross(camera.Up, camera.Front)));
 
-        // update hue shading colors and weights
-        ourShader.setVec3("cool", coolColor);
-        ourShader.setVec3("warm", warmColor);
-        ourShader.setFloat("alpha", alpha);
-        ourShader.setFloat("beta", beta);
+        // hue colors and weights
+        ourShader.setVec3("hue.cool", hue.cool);
+        ourShader.setVec3("hue.warm", hue.warm);
+        ourShader.setFloat("hue.alpha", hue.alpha);
+        ourShader.setFloat("hue.beta", hue.beta);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);

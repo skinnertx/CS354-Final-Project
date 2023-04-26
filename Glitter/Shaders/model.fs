@@ -14,12 +14,15 @@ struct Material {
     float shininess;
 };
 
-uniform Material material;
+struct Hue {
+    vec3 cool;
+    vec3 warm;
+    float alpha;
+    float beta;
+};
 
-uniform vec3 cool;
-uniform vec3 warm;
-uniform float alpha;
-uniform float beta;
+uniform Material material;
+uniform Hue hue;
 
 void main()
 {   
@@ -27,8 +30,8 @@ void main()
     vec3 objColor = texture(texture_diffuse1, TexCoords).xyz + material.diffuse;
 
     // interpolate between the cool and the warm term
-    vec3 k_cool = cool + objColor * alpha;
-    vec3 k_warm = warm + objColor * beta;
+    vec3 k_cool = hue.cool + objColor * hue.alpha;
+    vec3 k_warm = hue.warm + objColor * hue.beta;
     float l_dot_n = -dot(normals, lightDir);
     float avg = (1.0 + l_dot_n) / 2.0;
     vec3 color = avg * k_cool + (1.0 - avg) * k_warm;
