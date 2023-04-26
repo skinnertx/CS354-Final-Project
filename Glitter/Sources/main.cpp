@@ -74,14 +74,14 @@ int main(int argc, char * argv[]) {
     // build and compile our shader zprogram
     // ------------------------------------
     // TODO how do I get relative paths working?
-    Shader ourShader("C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter\\Shaders\\model.vs", 
-                     "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter\\Shaders\\model.fs");
+    Shader ourShader("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.vs", 
+                     "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.fs");
 
 
 
     // load models
     // -----------
-    Model ourModel("C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter\\resources\\painted_space.obj");
+    Model ourModel("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\resources\\teapot\\teapot_n_glass.obj");
 
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
@@ -110,6 +110,9 @@ int main(int argc, char * argv[]) {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
+
+        // update light direction for hue shading
+        ourShader.setVec3("aLightDir", glm::normalize(glm::cross(camera.Up, camera.Front)));
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
