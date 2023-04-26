@@ -12,24 +12,23 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float shininess;
-}; 
-  
+};
+
 uniform Material material;
+
+uniform vec3 cool;
+uniform vec3 warm;
+uniform float alpha;
+uniform float beta;
 
 void main()
 {   
     // object base color
-    // vec3 objColor = texture(texture_diffuse1, TexCoords).xyz + material.diffuse;
-
-    // the two temperatures for the toon shader
-    vec3 k_blue = vec3(0.0, 0.0, 0.4);
-    vec3 k_yellow = vec3(0.4, 0.4, 0.0);
-    float alpha = float(0.2);
-    float beta = float(0.6);
+    vec3 objColor = texture(texture_diffuse1, TexCoords).xyz + material.diffuse;
 
     // interpolate between the cool and the warm term
-    vec3 k_cool = k_blue + material.diffuse * alpha;
-    vec3 k_warm = k_yellow + material.diffuse * beta;
+    vec3 k_cool = cool + objColor * alpha;
+    vec3 k_warm = warm + objColor * beta;
     float l_dot_n = -dot(normals, lightDir);
     float avg = (1.0 + l_dot_n) / 2.0;
     vec3 color = avg * k_cool + (1.0 - avg) * k_warm;

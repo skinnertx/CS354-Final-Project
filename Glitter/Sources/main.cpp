@@ -77,6 +77,11 @@ int main(int argc, char * argv[]) {
     Shader ourShader("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.vs", 
                      "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.fs");
 
+    // set default Hue colors and weights
+    glm::vec3 coolColor = glm::vec3(0.0f, 0.0f, 0.4f);
+    glm::vec3 warmColor = glm::vec3(0.4f, 0.4f, 0.0f);
+    float alpha = 0.2f;
+    float beta = 0.6f;
 
 
     // load models
@@ -113,6 +118,12 @@ int main(int argc, char * argv[]) {
 
         // update light direction for hue shading
         ourShader.setVec3("aLightDir", glm::normalize(glm::cross(camera.Up, camera.Front)));
+
+        // update hue shading colors and weights
+        ourShader.setVec3("cool", coolColor);
+        ourShader.setVec3("warm", warmColor);
+        ourShader.setFloat("alpha", alpha);
+        ourShader.setFloat("beta", beta);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
