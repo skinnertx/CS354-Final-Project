@@ -38,7 +38,7 @@ void main()
     // interpolate between the cool and the warm term
     vec3 k_cool = hue.cool + objColor * hue.alpha;
     vec3 k_warm = hue.warm + objColor * hue.beta;
-    float l_dot_n = -dot(normals, lightDir);
+    float l_dot_n = dot(normals, lightDir);
     float avg = (1.0 + l_dot_n) / 2.0;
     vec3 color = avg * k_cool + (1.0 - avg) * k_warm;
 

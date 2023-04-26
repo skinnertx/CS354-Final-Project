@@ -39,7 +39,7 @@ struct Hue hue = {
 };
 
 // camera
-Camera camera(glm::vec3(0.0f, 7.0f, 15.0f));
+Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -128,7 +128,7 @@ int main(int argc, char * argv[]) {
 
     // set glitter dir and shader locations
     // ------------------------------------
-    string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter\\";
+    string glitterDir = "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter";
 
     string vertexShader = glitterDir + "\\Shaders\\model.vs";
     string fragShader = glitterDir + "\\Shaders\\model.fs";
@@ -149,7 +149,7 @@ int main(int argc, char * argv[]) {
 
     // load models
     // -----------
-    string modelObj = "resources\\A-Wing Starfighter.obj";
+    string modelObj = "\\resources\\teapot\\teapot_n_glass.obj";
     Model ourModel((glitterDir + modelObj).c_str());
 
     // Create Context and Load OpenGL Functions
@@ -235,7 +235,7 @@ int main(int argc, char * argv[]) {
         ourShader.use();
 
         // update light direction for hue
-        ourShader.setVec3("aLightDir", glm::normalize(glm::cross(camera.Up, camera.Front)));
+        ourShader.setVec3("aLightDir", camera.Right);
 
         // hue colors and weights
         ourShader.setVec3("hue.cool", hue.cool);
