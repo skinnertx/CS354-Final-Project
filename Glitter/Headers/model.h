@@ -39,6 +39,14 @@ public:
     }
 
     // draws the model, and thus all its meshes
+    void DrawToBuffer(Shader& shader)
+    {
+        for (unsigned int i = 0; i < meshes.size(); i++)
+            meshes[i].DrawToBuffer(shader);
+    }
+
+
+    // draws the model, and thus all its meshes
     void Draw(Shader& shader)
     {
         for (unsigned int i = 0; i < meshes.size(); i++)
@@ -170,6 +178,7 @@ private:
         aiColor4D diffuse;
         if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
             m.diffuse = glm::vec3(diffuse.r, diffuse.g, diffuse.b);
+            m.diffuse_map = false;
         }
         return m;
     }

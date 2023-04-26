@@ -44,6 +44,7 @@ public:
     vector<unsigned int> indices;
     vector<Texture>      textures;
     glm::vec3            diffuse = glm::vec3(0.0f, 0.0f, 0.0f);
+    bool                 diffuse_map = true; // assume diffuse map by default
     unsigned int VAO;
 
     // constructor
@@ -55,6 +56,13 @@ public:
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
+    }
+
+    void DrawToBuffer(Shader& shader) {
+        // draw mesh
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
     }
 
     // render the mesh
@@ -88,6 +96,7 @@ public:
 
         // material diffuse
         shader.setVec3("material.diffuse", diffuse);
+        shader.setBool("isMap", diffuse_map);
 
         // draw mesh
         glBindVertexArray(VAO);

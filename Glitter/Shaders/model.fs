@@ -23,11 +23,17 @@ struct Hue {
 
 uniform Material material;
 uniform Hue hue;
+uniform bool isMap;
 
 void main()
 {   
     // object base color
-    vec3 objColor = texture(texture_diffuse1, TexCoords).xyz + material.diffuse;
+    vec3 objColor;
+    if (isMap) {
+        objColor = texture(texture_diffuse1, TexCoords).xyz;
+    } else {
+        objColor = material.diffuse;
+    }
 
     // interpolate between the cool and the warm term
     vec3 k_cool = hue.cool + objColor * hue.alpha;

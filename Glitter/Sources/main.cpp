@@ -39,7 +39,7 @@ struct Hue hue = {
 };
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 7.0f, 15.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -56,7 +56,7 @@ int main(int argc, char * argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    //(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     auto mWindow = glfwCreateWindow(mWidth, mHeight, "OpenGL", nullptr, nullptr);
     // Check for Valid Context
     if (mWindow == nullptr) {
@@ -85,26 +85,108 @@ int main(int argc, char * argv[]) {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile our shader zprogram
+    // add extra depth/normal framebuffers
+    // used for silhouetteing
+    // -----------------------------
+    unsigned int normalFBO, depthFBO;
+    glGenFramebuffers(1, &normalFBO);
+
+    unsigned int depthTex, normalTex;
+    glGenTextures(1, &normalTex);
+    glGenTextures(1, &depthTex);
+
+    // normal render pass
+    glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
+
+    glBindTexture(GL_TEXTURE_2D, normalTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normalTex, 0);
+
+    // The depth buffer
+    GLuint depthrenderbuffer;
+    glGenRenderbuffers(1, &depthrenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1024, 768);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+    
+    // depth render texture
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, depthTex, 0);
+
+    // output values to both textures
+    const GLenum buffers[] { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, buffers);
+    
+    // rebind default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    // set glitter dir and shader locations
     // ------------------------------------
-    // TODO how do I get relative paths working?
-    Shader ourShader("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.vs", 
-                     "C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\Shaders\\model.fs");
+    string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter\\";
+
+    string vertexShader = glitterDir + "\\Shaders\\model.vs";
+    string fragShader = glitterDir + "\\Shaders\\model.fs";
+
+    string silhouetteVertexShader = glitterDir + "\\Shaders\\sil.vs";
+    string silhouetteFragShader = glitterDir + "\\Shaders\\sil.fs";
+
+    string windowVS = glitterDir + "\\Shaders\\window.vs";
+    string windowFS = glitterDir + "\\Shaders\\window.fs";
+
+
+    // build and compile our shader programs
+    // ------------------------------------
+    Shader ourShader(vertexShader.c_str(), fragShader.c_str());
+    Shader silShader(silhouetteVertexShader.c_str(), silhouetteFragShader.c_str());
+    Shader winShader(windowVS.c_str(), windowFS.c_str());
+
 
     // load models
     // -----------
-    Model ourModel("C:\\Users\\abdom\\source\\repos\\Glitter\\Glitter\\resources\\teapot\\teapot_n_glass.obj");
+    string modelObj = "resources\\A-Wing Starfighter.obj";
+    Model ourModel((glitterDir + modelObj).c_str());
 
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
+    float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates. NOTE that this plane is now much smaller and at the top of the screen
+        // positions   // texCoords
+        -0.9f,  0.9f,  0.0f, 1.0f, // TL
+        -0.9f,  0.5f,  0.0f, 0.0f, // BL
+        -0.4f,  0.5f,  1.0f, 0.0f, // BR
+
+        -0.9f,  0.9f,  0.0f, 1.0f, // TL
+        -0.4f,  0.5f,  1.0f, 0.0f, // BR
+        -0.4f,  0.9f,  1.0f, 1.0f  // TR
+    };
+
+    // screen quad VAO
+    unsigned int quadVAO, quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
 
     // render loop
     // -----------
     while (!glfwWindowShouldClose(mWindow))
     {
+
+        glEnable(GL_DEPTH_TEST);
         // per-frame time logic
         // --------------------
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -114,9 +196,38 @@ int main(int argc, char * argv[]) {
         // input
         // -----
         processInput(mWindow);
+        
+        // set up MVP matrices
+        // model matrix
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));	// it's a bit too big for our scene, so scale it down
+
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+
+        if (false) {
+            // render depth and normal textures
+            // -----
+            glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
+            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);// TODO should this change?
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            silShader.use();
+
+            silShader.setMat4("projection", projection);
+            silShader.setMat4("view", view);
+            silShader.setMat4("model", model);
+
+            ourModel.DrawToBuffer(silShader);
+            glActiveTexture(GL_TEXTURE0);
+
+        }
 
         // render
         // ------
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -133,17 +244,22 @@ int main(int argc, char * argv[]) {
         ourShader.setFloat("hue.beta", hue.beta);
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
+
         ourModel.Draw(ourShader);
+
+        glDisable(GL_DEPTH_TEST);
+        winShader.use();
+        winShader.setBool("left", false);
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, normalTex);	// use the color attachment texture as the texture of the quad plane
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        winShader.setBool("left", true);
+        glBindTexture(GL_TEXTURE_2D, depthTex);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
