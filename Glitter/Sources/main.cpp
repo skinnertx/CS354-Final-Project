@@ -60,6 +60,11 @@ Shader genShader(string fname, string glitterDir) {
 
 int main(int argc, char * argv[]) {
 
+    std::string p = argv[0]; // Name of the current exec program
+
+    // retrieve the directory path of the filepath
+    string glitterDir = p.substr(0, p.find_last_of('\\'));
+
     // Load GLFW and Create a Window
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -105,7 +110,8 @@ int main(int argc, char * argv[]) {
 
     // set glitter dir and shader locations
     // ------------------------------------
-    string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter";
+    // only set manually if building from source files!
+    // string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter";
 
     // build and compile our shader programs
     // ------------------------------------
