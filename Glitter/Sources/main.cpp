@@ -26,6 +26,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
+void processRender(unsigned int key);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -38,6 +39,8 @@ struct Hue hue = {
     0.2f, // alpha
     0.6f // beta
 };
+
+ int renderPassFlags = 0;
 
 // camera
 Camera camera(glm::vec3(-10.0f, 10.0f, 20.0f));
@@ -96,9 +99,9 @@ int main(int argc, char * argv[]) {
     // used for silhouetteing
     // -----------------------------
     TextureBuffer normalBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
-    TextureBuffer depthBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, false);
+    TextureBuffer depthBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
     TextureBuffer normalEdgeBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
-    TextureBuffer depthEdgeBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, false);
+    TextureBuffer depthEdgeBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
 
     // set glitter dir and shader locations
     // ------------------------------------
@@ -111,7 +114,7 @@ int main(int argc, char * argv[]) {
     Shader silDepthShader = genShader("silDepth", glitterDir);
     Shader normalShader = genShader("normal", glitterDir);
     Shader depthShader = genShader("depth", glitterDir);
-    Shader comboShader = genShader("combo", glitterDir);
+    Shader diffuseShader = genShader("diffuse", glitterDir);
     Shader quadShader = genShader("quad", glitterDir);
 
     // load models
@@ -119,6 +122,31 @@ int main(int argc, char * argv[]) {
     string modelObj = "\\resources\\A-Wing Starfighter.obj";
     //string modelObj = "\\resources\\teapot\\teapot_n_glass.obj";
     Model ourModel((glitterDir + modelObj).c_str());
+
+    // load control texture
+    // -----------
+    string path = glitterDir + "\\resources\\controls.jpg";
+    unsigned int con;
+    glGenTextures(1, &con);
+    glBindTexture(GL_TEXTURE_2D, con);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
@@ -148,6 +176,16 @@ int main(int argc, char * argv[]) {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+    float conVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates. NOTE that this plane is now much smaller and at the top of the screen
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
 
     // render loop
     // -----------
@@ -219,34 +257,91 @@ int main(int argc, char * argv[]) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
 
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
+        switch (renderPassFlags) {
+            case 0:
+                glEnable(GL_DEPTH_TEST);
 
-        // update light direction for hue
-        ourShader.setVec3("aLightDir", camera.Right);
+                // don't forget to enable shader before setting uniforms
+                ourShader.use();
 
-        // hue colors and weights
-        ourShader.setVec3("hue.cool", hue.cool);
-        ourShader.setVec3("hue.warm", hue.warm);
-        ourShader.setFloat("hue.alpha", hue.alpha);
-        ourShader.setFloat("hue.beta", hue.beta);
+                // update light direction for hue
+                ourShader.setVec3("aLightDir", camera.Right);
 
-        // view/projection transformations
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-        ourShader.setMat4("model", model);
+                // hue colors and weights
+                ourShader.setVec3("hue.cool", hue.cool);
+                ourShader.setVec3("hue.warm", hue.warm);
+                ourShader.setFloat("hue.alpha", hue.alpha);
+                ourShader.setFloat("hue.beta", hue.beta);
 
-        ourModel.Draw(ourShader);
+                // view/projection transformations
+                ourShader.setMat4("projection", projection);
+                ourShader.setMat4("view", view);
+                ourShader.setMat4("model", model);
 
-        glDisable(GL_DEPTH_TEST);
-        quadShader.use();
+                ourModel.Draw(ourShader);
+                break;
+            case 1:
+                glDisable(GL_DEPTH_TEST);
+                quadShader.use();
 
-        glBindTexture(GL_TEXTURE_2D, normalEdgeBuff.tex);
+                glBindTexture(GL_TEXTURE_2D, normalEdgeBuff.tex);
 
-        glBindVertexArray(quadVAO);
-        //glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindVertexArray(quadVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+            case 2:
+                glDisable(GL_DEPTH_TEST);
+                quadShader.use();
+
+                glBindTexture(GL_TEXTURE_2D, depthEdgeBuff.tex);
+
+                glBindVertexArray(quadVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+
+            case 3:
+                glDisable(GL_DEPTH_TEST);
+                quadShader.use();
+
+                glBindTexture(GL_TEXTURE_2D, normalBuff.tex);
+
+                glBindVertexArray(quadVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+
+            case 4:
+                glDisable(GL_DEPTH_TEST);
+                quadShader.use();
+
+                glBindTexture(GL_TEXTURE_2D, depthBuff.tex);
+
+                glBindVertexArray(quadVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+            case 5:
+                glEnable(GL_DEPTH_TEST);
+                diffuseShader.use();
+                // view/projection transformations
+                diffuseShader.setMat4("projection", projection);
+                diffuseShader.setMat4("view", view);
+                diffuseShader.setMat4("model", model);
+
+                ourModel.Draw(diffuseShader);
+                break;
+            case 6:
+                glDisable(GL_DEPTH_TEST);
+                quadShader.use();
+
+                glBindTexture(GL_TEXTURE_2D, con);
+
+                glBindVertexArray(quadVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+
+            default:
+                break;
+        }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -283,6 +378,22 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
 
+    // toggle render modes
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+        processRender(GLFW_KEY_H);
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+        processRender(GLFW_KEY_G);
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+        processRender(GLFW_KEY_J);
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+        processRender(GLFW_KEY_U);
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+        processRender(GLFW_KEY_I);
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+        processRender(GLFW_KEY_F);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        processRender(GLFW_KEY_E);
+
     // control Hue alpha
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         hue.alpha = min(hue.alpha + 0.001f, 1.0f);
@@ -303,6 +414,34 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+void processRender(unsigned int key) {
+    switch (key) {
+    case GLFW_KEY_G:
+        renderPassFlags = 0;
+        break;
+    case GLFW_KEY_H:
+        renderPassFlags = 1;
+        break;
+    case GLFW_KEY_J:
+        renderPassFlags = 2;
+        break;
+    case GLFW_KEY_U:
+        renderPassFlags = 3;
+        break;
+    case GLFW_KEY_I:
+        renderPassFlags = 4;
+        break;
+    case GLFW_KEY_F:
+        renderPassFlags = 5;
+        break;
+    case GLFW_KEY_E:
+        renderPassFlags = 6;
+        break;
+    default:
+        break;
+    }
 }
 
 
