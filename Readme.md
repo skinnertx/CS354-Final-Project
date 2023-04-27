@@ -8,6 +8,9 @@ Team Members:
 	- Abdulrahman (Abdo) Alshahrani
 		ama8347
 
+Compiled for Windows on Visual Studio 17
+Download the folder final executable for testing! It contains the executable, with all required assets.
+
 Press E for controls!
 
 It should be noted that we could not get relative file paths working. If you are compiling this project yourself, you need to change the GlitterDir string in main.cpp, to whever your installation is!
