@@ -3,6 +3,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
+#include "TextureBuffer.h"
 
 // System Headers
 #include <glad/glad.h>
@@ -48,6 +49,12 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+Shader genShader(string fname, string glitterDir) {
+    string vertexShader = glitterDir + "\\Shaders\\" + fname + ".vs";
+    string fragShader = glitterDir + "\\Shaders\\" + fname + ".fs";
+    return Shader(vertexShader.c_str(), fragShader.c_str());
+}
+
 int main(int argc, char * argv[]) {
 
     // Load GLFW and Create a Window
@@ -88,68 +95,24 @@ int main(int argc, char * argv[]) {
     // add extra depth/normal framebuffers
     // used for silhouetteing
     // -----------------------------
-    unsigned int normalFBO, depthFBO;
-    glGenFramebuffers(1, &normalFBO);
-
-    unsigned int depthTex, normalTex;
-    glGenTextures(1, &normalTex);
-    glGenTextures(1, &depthTex);
-
-    // normal render pass
-    glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
-
-    glBindTexture(GL_TEXTURE_2D, normalTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normalTex, 0);
-
-    // The depth buffer
-    GLuint depthrenderbuffer;
-    glGenRenderbuffers(1, &depthrenderbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1024, 768);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
-    
-    // depth render texture
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, depthTex, 0);
-
-    // output values to both textures
-    const GLenum buffers[] { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, buffers);
-    
-    // rebind default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+    TextureBuffer normalBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
+    TextureBuffer depthBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, false);
+    TextureBuffer normalEdgeBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, true);
+    TextureBuffer depthEdgeBuff = TextureBuffer(SCR_WIDTH, SCR_HEIGHT, false);
 
     // set glitter dir and shader locations
     // ------------------------------------
     string glitterDir = "C:\\Users\\gusca\\Desktop\\graph final\\Glitter\\Glitter";
 
-    string vertexShader = glitterDir + "\\Shaders\\model.vs";
-    string fragShader = glitterDir + "\\Shaders\\model.fs";
-
-    string silhouetteVertexShader = glitterDir + "\\Shaders\\sil.vs";
-    string silhouetteFragShader = glitterDir + "\\Shaders\\sil.fs";
-
-    string normalVS = glitterDir + "\\Shaders\\normal.vs";
-    string normalFS = glitterDir + "\\Shaders\\normal.fs";
-
-    string depthVS = glitterDir + "\\Shaders\\depth.vs";
-    string depthFS = glitterDir + "\\Shaders\\depth.fs";
-
-
     // build and compile our shader programs
     // ------------------------------------
-    Shader ourShader(vertexShader.c_str(), fragShader.c_str());
-    Shader silShader(silhouetteVertexShader.c_str(), silhouetteFragShader.c_str());
-    Shader normalShader(normalVS.c_str(), normalFS.c_str());
-    Shader depthShader(depthVS.c_str(), depthFS.c_str());
-
+    Shader ourShader = genShader("model", glitterDir);
+    Shader silNormalShader = genShader("silNormal", glitterDir);
+    Shader silDepthShader = genShader("silDepth", glitterDir);
+    Shader normalShader = genShader("normal", glitterDir);
+    Shader depthShader = genShader("depth", glitterDir);
+    Shader comboShader = genShader("combo", glitterDir);
+    Shader quadShader = genShader("quad", glitterDir);
 
     // load models
     // -----------
@@ -164,13 +127,13 @@ int main(int argc, char * argv[]) {
 
     float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates. NOTE that this plane is now much smaller and at the top of the screen
         // positions   // texCoords
-        -0.9f,  0.9f,  0.0f, 1.0f, // TL
-        -0.9f,  0.5f,  0.0f, 0.0f, // BL
-        -0.4f,  0.5f,  1.0f, 0.0f, // BR
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
 
-        -0.9f,  0.9f,  0.0f, 1.0f, // TL
-        -0.4f,  0.5f,  1.0f, 0.0f, // BR
-        -0.4f,  0.9f,  1.0f, 1.0f  // TR
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
     };
 
     // screen quad VAO
@@ -190,7 +153,6 @@ int main(int argc, char * argv[]) {
     // -----------
     while (!glfwWindowShouldClose(mWindow))
     {
-
         glEnable(GL_DEPTH_TEST);
         // per-frame time logic
         // --------------------
@@ -205,36 +167,59 @@ int main(int argc, char * argv[]) {
         // set up MVP matrices
         // model matrix
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));	// it's a bit too big for our scene, so scale it down
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); 
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));	
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        if (true) {
-            // render depth and normal textures
-            // -----
-            glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
-            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);// TODO should this change?
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // render depth and normal textures
+        // -----
+        glBindFramebuffer(GL_FRAMEBUFFER, normalBuff.FBO);
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            silShader.use();
+        silNormalShader.use();
+        silNormalShader.setMat4("projection", projection);
+        silNormalShader.setMat4("view", view);
+        silNormalShader.setMat4("model", model);
 
-            silShader.setMat4("projection", projection);
-            silShader.setMat4("view", view);
-            silShader.setMat4("model", model);
+        ourModel.DrawToBuffer(silNormalShader);
 
-            ourModel.DrawToBuffer(silShader);
-            glActiveTexture(GL_TEXTURE0);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthBuff.FBO);
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        }
+        silDepthShader.use();
+        silDepthShader.setMat4("projection", projection);
+        silDepthShader.setMat4("view", view);
+        silDepthShader.setMat4("model", model);
 
-        // render
+        ourModel.DrawToBuffer(silDepthShader);
+
+        // process depth and normal for outlines
+        // -----
+        glBindFramebuffer(GL_FRAMEBUFFER, normalEdgeBuff.FBO);
+        glDisable(GL_DEPTH_TEST);
+        normalShader.use();
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, normalBuff.tex);	
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, depthEdgeBuff.FBO);
+        glDisable(GL_DEPTH_TEST);
+        depthShader.use();
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, depthBuff.tex);	
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // render to main frame
         // ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
@@ -256,24 +241,18 @@ int main(int argc, char * argv[]) {
         ourModel.Draw(ourShader);
 
         glDisable(GL_DEPTH_TEST);
-        normalShader.use();
-        normalShader.setBool("left", false);
+        quadShader.use();
+
+        glBindTexture(GL_TEXTURE_2D, normalEdgeBuff.tex);
+
         glBindVertexArray(quadVAO);
-        glBindTexture(GL_TEXTURE_2D, normalTex);	// use the color attachment texture as the texture of the quad plane
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        depthShader.use();
-        depthShader.setBool("left", true);
-        glBindTexture(GL_TEXTURE_2D, depthTex);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
     }
-
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -291,7 +270,6 @@ void processInput(GLFWwindow* window)
         camera.sprint();
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
         camera.slow();
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

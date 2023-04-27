@@ -5,20 +5,21 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 
-const float offset = 1.0 / 300.0; 
+const float offsetx = 1.0 / 800.0; 
+const float offsety = 1.0 / 600.0; 
 
 void main()
 {
     vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset), // top-left
-        vec2( 0.0f,    offset), // top-center
-        vec2( offset,  offset), // top-right
-        vec2(-offset,  0.0f),   // center-left
+        vec2(-offsetx,  offsety), // top-left
+        vec2( 0.0f,    offsety), // top-center
+        vec2( offsetx,  offsety), // top-right
+        vec2(-offsetx,  0.0f),   // center-left
         vec2( 0.0f,    0.0f),   // center-center
-        vec2( offset,  0.0f),   // center-right
-        vec2(-offset, -offset), // bottom-left
-        vec2( 0.0f,   -offset), // bottom-center
-        vec2( offset, -offset)  // bottom-right    
+        vec2( offsetx,  0.0f),   // center-right
+        vec2(-offsetx, -offsety), // bottom-left
+        vec2( 0.0f,   -offsety), // bottom-center
+        vec2( offsetx, -offsety)  // bottom-right    
     );
 
     float sobelX[9] = float[](
