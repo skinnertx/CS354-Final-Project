@@ -14,11 +14,6 @@ Download the folder final executable for testing! It contains the executable, wi
 
 Press E for controls!
 
-It should be noted that we could not get relative file paths working. If you are compiling this project yourself, you need to change the GlitterDir string in main.cpp, to whever your installation is!
-
-
-This is the license that came with Glitter!
-
 ## License
 >The MIT License (MIT)
 
